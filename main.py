@@ -5,59 +5,77 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
-#Abrindo o navegador 
-navegador = webdriver.Chrome()
+#Initialize the driver
+def initializing():
+    #Abrindo o navegador 
+    navegador = webdriver.Chrome()
 
-#Acessando o Google/duckduckgo (Infelizmente ao acessar o google, caimos no recaptcha)
-navegador.get("https://duckduckgo.com")
-navegador.maximize_window()
+    #Acessando o Google/duckduckgo (Infelizmente ao acessar o google, caimos no recaptcha)
+    navegador.get("https://duckduckgo.com")
+    navegador.maximize_window()
 
-#Pesquisando botão de search do google
-pesquisa_google = navegador.find_element(By.NAME, "q")
+    return navegador
 
-#Clicando no botão
-pesquisa_google.click()
-time.sleep(2)
+#Search for the parameter
+def search(navegador, term):
+    #Pesquisando botão de search do google
+    pesquisa_google = navegador.find_element(By.NAME, "q")
 
-#Escrevendo no botão de pesquisa
-pesquisa_google.send_keys("cases de agente de IA")
-pesquisa_google.send_keys(Keys.RETURN)
-time.sleep(2)
+    #Clicando no botão
+    pesquisa_google.click()
+    time.sleep(2)
 
-#Crio o array para receber titulos e links
-titulos_links = []
+    #Escrevendo no botão de pesquisa
+    pesquisa_google.send_keys(term)
+    pesquisa_google.send_keys(Keys.RETURN)
+    time.sleep(2)
 
-#Extraindo links e títulos dos sites
-c = 0
-while c != 2:
-    resultados = navegador.find_elements(By.CSS_SELECTOR, 'h2 a span')
-    for sites in resultados:
-        titulo = sites.text # Pegando o título do <span>
-        link = sites.find_element(By.XPATH, './ancestor::a').get_attribute("href") # Pegando o link da tag <a>
+#Extracting the titles and links 
+def extracting_info(navegador): 
+    #Create the array for the results
+    titulos_links = [] 
 
-        if (titulo and link): #se for true guardamos
-            titulos_links.append((titulo, link))
+    clicks = 0 # Contador
+    while clicks != 2:
+        resultados = navegador.find_elements(By.CSS_SELECTOR, 'h2 a span')
 
-    # Scroll pra baixo pra que botão apareça
-    navegador.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(1)
+        for sites in resultados:
+            titulo = sites.text # Pegando o título do <span>
+            link = sites.find_element(By.XPATH, './ancestor::a').get_attribute("href") #Pegando o link da tag <a>
 
-    # Acho botão para carregar mais
-    bottom_more = WebDriverWait(navegador, 10).until(
-        EC.element_to_be_clickable((By.ID, "more-results"))
-    )
-    bottom_more.click()
-    c += 1
+            if (titulo and link): #se for true guardamos
+                titulos_links.append((titulo, link))
 
-# for titulo, link in titulos_links:
-#     print(f"Título: {titulo}\n Link: {link}\n")
+        # Scroll pra baixo pra que botão apareça
+        navegador.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(1)
 
-# nome do arquivo TXT
-arquivo_txt = "resultados_busca.txt"
+        # Acho botão para carregar mais
+        bottom_more = WebDriverWait(navegador, 10).until(
+            EC.element_to_be_clickable((By.ID, "more-results"))
+        )
+        bottom_more.click()
+        clicks += 1
+    
+    return titulos_links
 
-# Salvando os dados no arquivo TXT
-with open(arquivo_txt, mode='w', encoding='utf-8') as file:
-    for titulo, link in titulos_links:
-        file.write(f"Título: {titulo}\nLink: {link}\n\n")
+#Saving the result of the search in a txt file
+def saving_results_txt(resultados, arquivo_txt):
+    # Salvando os dados no arquivo TXT
+    with open(arquivo_txt, mode='w', encoding='utf-8') as file:
+        for titulo, link in resultados:
+            file.write(f"Título: {titulo}\nLink: {link}\n\n")
 
-print(f"Os dados foram salvos no arquivo: {arquivo_txt}")
+def main():
+    termo_de_busca = "cases de agente de IA" 
+    nome_do_arquivo_txt = "resultados_busca.txt"
+
+    navegador = initializing() #saving the return in a variable
+    search(navegador, termo_de_busca)
+    resultados = extracting_info(navegador)
+    saving_results_txt(resultados, nome_do_arquivo_txt)
+    
+    print(f"Os dados foram salvos no arquivo: {nome_do_arquivo_txt}")
+    navegador.quit()
+
+main()
