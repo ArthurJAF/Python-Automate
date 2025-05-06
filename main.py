@@ -45,7 +45,8 @@ def extracting_info(navegador, limit=30):
             if (titulo and link and link not in vistos): #se for true guardamos
                 titulos_links.append((titulo, link))
                 vistos.add(link)
-
+            
+        time.sleep(1)
         # Scroll pra baixo pra que botão apareça
         navegador.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(1)
