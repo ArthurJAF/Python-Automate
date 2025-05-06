@@ -9,7 +9,6 @@ import time
 def initializing():
     #Abrindo o navegador 
     navegador = webdriver.Chrome()
-
     #Acessando o Google/duckduckgo (Infelizmente ao acessar o google, caimos no recaptcha)
     navegador.get("https://duckduckgo.com")
     navegador.maximize_window()
@@ -31,20 +30,21 @@ def search(navegador, term):
     time.sleep(2)
 
 #Extracting the titles and links 
-def extracting_info(navegador): 
-    #Create the array for the results
-    titulos_links = [] 
+def extracting_info(navegador, limit=30): 
+    
+    titulos_links = []  #crio um array para guardar os resultados da pesquisa
+    vistos = set() #crio um conjunto
 
-    clicks = 0 # Contador
-    while clicks != 2:
+    while True: 
         resultados = navegador.find_elements(By.CSS_SELECTOR, 'h2 a span')
 
         for sites in resultados:
-            titulo = sites.text # Pegando o título do <span>
+            titulo = sites.text #Pegando o título do <span>
             link = sites.find_element(By.XPATH, './ancestor::a').get_attribute("href") #Pegando o link da tag <a>
 
-            if (titulo and link): #se for true guardamos
+            if (titulo and link and link not in vistos): #se for true guardamos
                 titulos_links.append((titulo, link))
+                vistos.add(link)
 
         # Scroll pra baixo pra que botão apareça
         navegador.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -55,8 +55,11 @@ def extracting_info(navegador):
             EC.element_to_be_clickable((By.ID, "more-results"))
         )
         bottom_more.click()
-        clicks += 1
-    
+        
+        if (len(titulos_links) >= limit):
+            break
+        
+
     return titulos_links
 
 #Saving the result of the search in a txt file
@@ -68,13 +71,13 @@ def saving_results_txt(resultados, arquivo_txt):
 
 def main():
     termo_de_busca = "cases de agente de IA" 
-    nome_do_arquivo_txt = "resultados_busca.txt"
+    nome_do_arquivo_txt = "resultados_busca.txt" #nome do aqruivo onde vão ser guardadas as informações
 
     navegador = initializing() #saving the return in a variable
     search(navegador, termo_de_busca)
     resultados = extracting_info(navegador)
     saving_results_txt(resultados, nome_do_arquivo_txt)
-    
+
     print(f"Os dados foram salvos no arquivo: {nome_do_arquivo_txt}")
     navegador.quit()
 
